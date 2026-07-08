@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('lahan', function (Blueprint $table) {
             $table->id();
             $table->foreignId('id_pengguna')->constrained('users')->onDelete('cascade');
-            $table->foreignId('id_kelompok')->constrained('kelompoks')->onDelete('cascade');
+            $table->foreignId('id_kelompok')->nullable()->constrained('kelompoks')->onDelete('cascade');
             $table->foreignId('id_komoditas')->constrained('komoditas')->onDelete('cascade');
-            $table->foreignId('id_mentor')->constrained('users')->onDelete('cascade');
+            $table->foreignId('id_mentor')->nullable()->constrained('users')->onDelete('cascade');
             $table->enum('tipe_lahan', ['greenhouse','open_field']);
             $table->enum('jenis_lahan', ['kelompok','individu']);
             $table->date('tanggal_mulai');

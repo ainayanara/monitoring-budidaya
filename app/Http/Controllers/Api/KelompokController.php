@@ -524,21 +524,57 @@ class KelompokController extends Controller
                 ], 403);
             }
 
-            // Hitung progress
-            $totalLangkah = 0;
-            $selesaiLangkah = 0;
+            // Ambil anggota kelompok
+            $anggotaIds = $kelompok->anggota->pluck('id');
 
-            // Progress dari SOP
-            // ...
+            // 1. Ambil Aktivitas dari anggota kelompok
+            $aktivitas = \App\Models\Aktivitas::whereHas('kalender', function ($query) use ($anggotaIds) {
+                $query->whereIn('id_pengguna', $anggotaIds);
+            })
+            ->with(['kalender.pengguna'])
+            ->orderBy('updated_at', 'desc')
+            ->get()
+            ->map(function ($a) {
+                $pengguna = $a->kalender->pengguna;
+                $nama = $pengguna ? trim($pengguna->nama_depan . ' ' . $pengguna->nama_belakang) : '-';
+                return [
+                    'tipe' => 'aktivitas',
+                    'nama' => $nama,
+                    'kegiatan' => $a->kalender->nama_kegiatan ?? '-',
+                    'fase_budidaya' => $a->kalender->nama_tahapan ?? '-',
+                    'waktu' => $a->updated_at ? $a->updated_at->toIso8601String() : null,
+                    'status' => $a->status_verifikasi ?? 'pending',
+                ];
+            });
+
+            // 2. Ambil SopProgress dari anggota kelompok
+            $sopProgress = \App\Models\SopProgress::whereIn('id_pengguna', $anggotaIds)
+                ->with(['pengguna', 'langkah.sop'])
+                ->orderBy('updated_at', 'desc')
+                ->get()
+                ->map(function ($sp) {
+                    $pengguna = $sp->pengguna;
+                    $nama = $pengguna ? trim($pengguna->nama_depan . ' ' . $pengguna->nama_belakang) : '-';
+                    return [
+                        'tipe' => 'sop',
+                        'nama' => $nama,
+                        'kegiatan' => $sp->langkah->judul_langkah ?? '-',
+                        'fase_budidaya' => $sp->langkah->sop->nama_tahapan ?? '-',
+                        'waktu' => $sp->updated_at ? $sp->updated_at->toIso8601String() : null,
+                        'status' => $sp->selesai ? 'selesai' : 'belum',
+                    ];
+                });
+
+            // Gabungkan dan urutkan berdasarkan waktu desc, batasi max 20 item
+            $merged = $aktivitas->concat($sopProgress)
+                ->sortByDesc('waktu')
+                ->values()
+                ->take(20);
 
             return response()->json([
                 'status' => 'success',
                 'message' => 'Progress kelompok berhasil diambil',
-                'data' => [
-                    'total_langkah' => $totalLangkah,
-                    'selesai_langkah' => $selesaiLangkah,
-                    'persentase' => $totalLangkah > 0 ? round(($selesaiLangkah / $totalLangkah) * 100) : 0,
-                ]
+                'data' => $merged
             ]);
 
         } catch (\Exception $e) {

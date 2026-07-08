@@ -31,7 +31,7 @@ class ProposalController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'data'   => $proposal,
+            'data' => $proposal,
         ]);
     }
 
@@ -41,41 +41,41 @@ class ProposalController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Validasi gagal',
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 
         $user = $request->user();
 
         $proposal = Proposal::create([
-            'id_pengguna'               => $user->id,
-            'id_kelompok'               => $request->id_kelompok,
-            'id_lahan'                  => $request->id_lahan,
-            'judul'                     => $request->judul,
-            'nama_penyusun'             => $user->nama_depan . ' ' . $user->nama_belakang,
-            'status'                    => 'draft',
-            'status_rab'                => 'draft',
-            'luas_lahan'                => $request->luas_lahan,
-            'jumlah_populasi'           => $request->jumlah_populasi,
-            'latar_belakang'            => $request->latar_belakang,
-            'maksud_tujuan'             => $request->maksud_tujuan,
-            'waktu_tempat'              => $request->waktu_tempat,
-            'rencana_penelitian'        => $request->rencana_penelitian,
-            'nama_tanaman'              => $request->nama_tanaman,
+            'id_pengguna' => $user->id,
+            'id_kelompok' => $request->id_kelompok,
+            'id_lahan' => $request->id_lahan,
+            'judul' => $request->judul,
+            'nama_penyusun' => $user->nama_depan . ' ' . $user->nama_belakang,
+            'status' => 'draft',
+            'status_rab' => 'draft',
+            'luas_lahan' => $request->luas_lahan,
+            'jumlah_populasi' => $request->jumlah_populasi,
+            'latar_belakang' => $request->latar_belakang,
+            'maksud_tujuan' => $request->maksud_tujuan,
+            'waktu_tempat' => $request->waktu_tempat,
+            'rencana_penelitian' => $request->rencana_penelitian,
+            'nama_tanaman' => $request->nama_tanaman,
             'perkiraan_panen_per_pohon' => $request->perkiraan_panen_per_pohon,
-            'total_panen_kg'            => $request->total_panen_kg,
-            'harga_satuan'              => $request->harga_satuan,
-            'jarak_tanam'               => $request->jarak_tanam,
-            'masa_periode_tanam'        => $request->masa_periode_tanam,
-            'kesimpulan_analisis'       => $request->kesimpulan_analisis,
+            'total_panen_kg' => $request->total_panen_kg,
+            'harga_satuan' => $request->harga_satuan,
+            'jarak_tanam' => $request->jarak_tanam,
+            'masa_periode_tanam' => $request->masa_periode_tanam,
+            'kesimpulan_analisis' => $request->kesimpulan_analisis,
         ]);
 
         return response()->json([
-            'status'  => 'success',
+            'status' => 'success',
             'message' => 'Proposal disimpan sebagai draft',
-            'data'    => $proposal,
+            'data' => $proposal,
         ], 201);
     }
 
@@ -105,7 +105,7 @@ class ProposalController extends Controller
 
         if (!$proposal->canEditBy($request->user())) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Proposal hanya bisa diedit saat status draft atau revisi',
             ], 403);
         }
@@ -114,9 +114,9 @@ class ProposalController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Validasi gagal',
-                'errors'  => $validator->errors(),
+                'errors' => $validator->errors(),
             ], 422);
         }
 
@@ -141,9 +141,9 @@ class ProposalController extends Controller
         $proposal->save();
 
         return response()->json([
-            'status'  => 'success',
+            'status' => 'success',
             'message' => 'Proposal berhasil diperbarui',
-            'data'    => $proposal->fresh(['rab', 'lahan']),
+            'data' => $proposal->fresh(['rab', 'lahan']),
         ]);
     }
 
@@ -153,7 +153,7 @@ class ProposalController extends Controller
 
         if ($proposal->id_pengguna !== $request->user()->id || $proposal->status !== 'draft') {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Hanya proposal draft milik sendiri yang bisa dihapus',
             ], 403);
         }
@@ -161,7 +161,7 @@ class ProposalController extends Controller
         $proposal->delete();
 
         return response()->json([
-            'status'  => 'success',
+            'status' => 'success',
             'message' => 'Proposal draft berhasil dihapus',
         ]);
     }
@@ -173,36 +173,36 @@ class ProposalController extends Controller
     {
         $proposal = Proposal::with('rab')->findOrFail($id);
 
-        if ($proposal->id_pengguna !== $request->user()->id) {
+        if ($proposal->id_pengguna != $request->user()->id) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Proposal bukan milik Anda',
             ], 403);
         }
 
         if (!in_array($proposal->status, ['draft', 'revisi'], true)) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Proposal sudah dikirim ke mentor',
             ], 422);
         }
 
         $proposal->update([
-            'status'     => 'pending',
+            'status' => 'pending',
             'status_rab' => $proposal->rab->isNotEmpty() ? 'pending' : 'draft',
         ]);
 
         return response()->json([
-            'status'  => 'success',
+            'status' => 'success',
             'message' => 'Proposal berhasil dikirim ke mentor',
-            'data'    => $proposal,
+            'data' => $proposal,
         ]);
     }
 
     public function review(Request $request, $id)
     {
         $request->validate([
-            'status'         => 'required|in:disetujui,revisi,ditolak',
+            'status' => 'required|in:disetujui,revisi,ditolak',
             'catatan_mentor' => 'nullable|string',
         ]);
 
@@ -213,15 +213,15 @@ class ProposalController extends Controller
         }
 
         $proposal->update([
-            'status'         => $request->status,
+            'status' => $request->status,
             'catatan_mentor' => $request->catatan_mentor,
-            'reviewed_by'    => $request->user()->id,
+            'reviewed_by' => $request->user()->id,
         ]);
 
         return response()->json([
-            'status'  => 'success',
+            'status' => 'success',
             'message' => 'Proposal berhasil direview',
-            'data'    => $proposal,
+            'data' => $proposal,
         ]);
     }
 
@@ -231,7 +231,7 @@ class ProposalController extends Controller
     public function reviewRab(Request $request, $id)
     {
         $request->validate([
-            'status_rab'         => 'required|in:disetujui,revisi',
+            'status_rab' => 'required|in:disetujui,revisi',
             'catatan_rab_mentor' => 'nullable|string',
         ]);
 
@@ -242,15 +242,15 @@ class ProposalController extends Controller
         }
 
         $proposal->update([
-            'status_rab'         => $request->status_rab,
+            'status_rab' => $request->status_rab,
             'catatan_rab_mentor' => $request->catatan_rab_mentor,
-            'reviewed_rab_by'    => $request->user()->id,
+            'reviewed_rab_by' => $request->user()->id,
         ]);
 
         return response()->json([
-            'status'  => 'success',
+            'status' => 'success',
             'message' => 'RAB proposal berhasil direview',
-            'data'    => $proposal->fresh('rab'),
+            'data' => $proposal->fresh('rab'),
         ]);
     }
 
@@ -268,7 +268,7 @@ class ProposalController extends Controller
 
             if (!$kelompok || (int) $kelompok->id_mentor !== (int) $user->id) {
                 return response()->json([
-                    'status'  => 'error',
+                    'status' => 'error',
                     'message' => 'Anda bukan mentor pembimbing kelompok pemilik proposal ini.',
                 ], 403);
             }
@@ -278,7 +278,7 @@ class ProposalController extends Controller
 
         if ((int) $proposal->id_pengguna !== (int) $user->id) {
             return response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Anda tidak berhak mengakses proposal ini.',
             ], 403);
         }
@@ -291,22 +291,22 @@ class ProposalController extends Controller
         $required = $isUpdate ? 'sometimes' : 'required';
 
         return [
-            'id_kelompok'               => $required . '|exists:kelompoks,id',
-            'id_lahan'                  => 'nullable|exists:lahan,id',
-            'judul'                     => $required . '|string|max:200',
-            'luas_lahan'                => $required . '|numeric|min:0',
-            'jumlah_populasi'           => $required . '|integer|min:1',
-            'latar_belakang'            => $required . '|string',
-            'maksud_tujuan'             => $required . '|string',
-            'waktu_tempat'              => $required . '|string',
-            'rencana_penelitian'        => $required . '|string',
-            'nama_tanaman'              => $required . '|string|max:100',
+            'id_kelompok' => $required . '|exists:kelompoks,id',
+            'id_lahan' => 'nullable|exists:lahan,id',
+            'judul' => $required . '|string|max:200',
+            'luas_lahan' => $required . '|numeric|min:0',
+            'jumlah_populasi' => $required . '|integer|min:1',
+            'latar_belakang' => $required . '|string',
+            'maksud_tujuan' => $required . '|string',
+            'waktu_tempat' => $required . '|string',
+            'rencana_penelitian' => $required . '|string',
+            'nama_tanaman' => $required . '|string|max:100',
             'perkiraan_panen_per_pohon' => 'nullable|numeric|min:0',
-            'total_panen_kg'            => $required . '|numeric|min:0',
-            'harga_satuan'              => $required . '|numeric|min:0',
-            'jarak_tanam'               => 'nullable|string|max:50',
-            'masa_periode_tanam'        => 'nullable|string|max:50',
-            'kesimpulan_analisis'       => 'nullable|string',
+            'total_panen_kg' => $required . '|numeric|min:0',
+            'harga_satuan' => $required . '|numeric|min:0',
+            'jarak_tanam' => 'nullable|string|max:50',
+            'masa_periode_tanam' => 'nullable|string|max:50',
+            'kesimpulan_analisis' => 'nullable|string',
         ];
     }
 }

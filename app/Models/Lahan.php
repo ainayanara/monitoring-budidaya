@@ -51,9 +51,13 @@ class Lahan extends Model
 
     public function getEstimasiSelesaiAttribute()
     {
-        $totalHari = $this->komoditas?->sop()->sum('estimasi_hari') ?? 0;
+        if (!$this->tanggal_mulai) {
+            return null;
+        }
 
-        if ($totalHari == 0) {
+        $totalHari = (int) ($this->komoditas?->sop()->sum('estimasi_hari') ?? 0);
+
+        if ($totalHari === 0) {
             return null;
         }
 
@@ -64,6 +68,10 @@ class Lahan extends Model
 
     public function getUmurTanamAttribute()
     {
+        if (!$this->tanggal_mulai) {
+            return 0;
+        }
+
         return Carbon::parse($this->tanggal_mulai)
             ->diffInDays(Carbon::today());
     }
