@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use App\Models\Kelompok; 
 
 class AktivitasController extends Controller
 {
@@ -47,32 +48,52 @@ class AktivitasController extends Controller
         ]);
     }
 
-    public function index(Request $request)
-    {
-        $userId = $request->user()->id;
-        Aktivitas::syncForUser($userId);
+public function index(Request $request)
+{
+    $user = $request->user();
 
+    // ✅ Jika mentor, ambil aktivitas semua siswa yang dibimbing
+    if ($user->peran === 'mentor') {
+        // Cari semua kelompok yang dibimbing mentor ini
+        $kelompokIds = $user->kelompokDibimbing()->pluck('id');
+
+        // Ambil semua siswa di kelompok tersebut
+        $siswaIds = Kelompok::whereIn('id', $kelompokIds)
+            ->with('anggota')
+            ->get()
+            ->flatMap(fn($k) => $k->anggota->pluck('id'))
+            ->unique()
+            ->values();
+
+        // Ambil aktivitas siswa-siswa tersebut
         $query = Aktivitas::with(['kalender.komoditas', 'kalender.lahan.komoditas'])
-            ->whereHas('kalender', fn ($q) => $q->where('id_pengguna', $userId));
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        $aktivitas = $query->orderBy('tanggal_aktivitas')->get();
-
-        return response()->json([
-            'status' => 'success',
-            'data'   => $aktivitas->map(fn ($a) => $this->formatAktivitas($a)),
-            'ringkasan' => [
-                'terlewat'  => $aktivitas->where('status', 'terlewat')->count(),
-                'terjadwal' => $aktivitas->where('status', 'terjadwal')->count(),
-                'hari_ini'  => $aktivitas->where('status', 'hari_ini')->count(),
-                'selesai'   => $aktivitas->where('status', 'selesai')->count(),
-            ],
-        ]);
+            ->whereHas('kalender', function ($q) use ($siswaIds) {
+                $q->whereIn('id_pengguna', $siswaIds);
+            });
+    } else {
+        // Siswa: ambil aktivitas sendiri
+        Aktivitas::syncForUser($user->id);
+        $query = Aktivitas::with(['kalender.komoditas', 'kalender.lahan.komoditas'])
+            ->whereHas('kalender', fn ($q) => $q->where('id_pengguna', $user->id));
     }
 
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
+    }
+
+    $aktivitas = $query->orderBy('tanggal_aktivitas')->get();
+
+    return response()->json([
+        'status' => 'success',
+        'data' => $aktivitas->map(fn ($a) => $this->formatAktivitas($a)),
+        'ringkasan' => [
+            'terlewat' => $aktivitas->where('status', 'terlewat')->count(),
+            'terjadwal' => $aktivitas->where('status', 'terjadwal')->count(),
+            'hari_ini' => $aktivitas->where('status', 'hari_ini')->count(),
+            'selesai' => $aktivitas->where('status', 'selesai')->count(),
+        ],
+    ]);
+}
     /**
      * POST /api/aktivitas
      * Tambah aktivitas manual oleh siswa.
