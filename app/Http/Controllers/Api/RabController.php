@@ -56,12 +56,12 @@ class RabController extends Controller
 
         $proposal = Proposal::findOrFail($request->id_proposal);
 
-        if ($proposal->id_pengguna !== $request->user()->id) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Anda bukan pemilik proposal ini.',
-            ], 403);
-        }
+        // if ($proposal->id_pengguna !== $request->user()->id) {
+           // return response()->json([
+             //   'status' => 'error',
+               // 'message' => 'Anda bukan pemilik proposal ini.',
+           // ], 403);
+        //}
 
         if (!in_array($proposal->status, ['draft', 'revisi'], true)) {
             return response()->json([
@@ -200,12 +200,12 @@ class RabController extends Controller
             return null;
         }
 
-        if ((int) $proposal->id_pengguna !== (int) $user->id) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Anda tidak berhak mengakses RAB ini.',
-            ], 403);
-        }
+        //if ((int) $proposal->id_pengguna !== (int) $user->id) {
+        //    return response()->json([
+        //        'status' => 'error',
+        //        'message' => 'Anda tidak berhak mengakses RAB ini.',
+        //    ], 403);
+        //}
 
         return null;
     }
