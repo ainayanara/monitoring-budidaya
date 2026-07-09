@@ -204,6 +204,7 @@ class ProposalController extends Controller
         $request->validate([
             'status' => 'required|in:disetujui,revisi,ditolak',
             'catatan_mentor' => 'nullable|string',
+            'nilai_proposal' => 'nullable|numeric|min:0|max:100',
         ]);
 
         $proposal = Proposal::findOrFail($id);
@@ -215,6 +216,9 @@ class ProposalController extends Controller
         $proposal->update([
             'status' => $request->status,
             'catatan_mentor' => $request->catatan_mentor,
+            'nilai_proposal' => $request->filled('nilai_proposal')
+                ? $request->nilai_proposal
+                : $proposal->nilai_proposal,
             'reviewed_by' => $request->user()->id,
         ]);
 
@@ -233,6 +237,7 @@ class ProposalController extends Controller
         $request->validate([
             'status_rab' => 'required|in:disetujui,revisi',
             'catatan_rab_mentor' => 'nullable|string',
+            'nilai_rab' => 'nullable|numeric|min:0|max:100',
         ]);
 
         $proposal = Proposal::findOrFail($id);
@@ -244,6 +249,9 @@ class ProposalController extends Controller
         $proposal->update([
             'status_rab' => $request->status_rab,
             'catatan_rab_mentor' => $request->catatan_rab_mentor,
+            'nilai_rab' => $request->filled('nilai_rab')
+                ? $request->nilai_rab
+                : $proposal->nilai_rab,
             'reviewed_rab_by' => $request->user()->id,
         ]);
 

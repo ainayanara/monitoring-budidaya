@@ -312,6 +312,7 @@ class AktivitasController extends Controller
         $request->validate([
             'status_verifikasi' => 'required|in:disetujui,revisi',
             'catatan_mentor'    => 'nullable|string',
+            'nilai'             => 'nullable|numeric|min:0|max:100',
         ]);
 
         $aktivitas = Aktivitas::with(['kalender.komoditas', 'kalender.lahan'])->findOrFail($id);
@@ -323,6 +324,7 @@ class AktivitasController extends Controller
         $aktivitas->update([
             'status_verifikasi' => $request->status_verifikasi,
             'catatan_mentor'    => $request->catatan_mentor,
+            'nilai'             => $request->filled('nilai') ? $request->nilai : $aktivitas->nilai,
             'verified_by'       => $request->user()->id,
         ]);
 
@@ -396,6 +398,7 @@ class AktivitasController extends Controller
                 : null,
             'status_verifikasi'   => $aktivitas->status_verifikasi,
             'catatan_mentor'      => $aktivitas->catatan_mentor,
+            'nilai'               => $aktivitas->nilai,
             'verified_by'         => $aktivitas->verified_by,
         ];
     }

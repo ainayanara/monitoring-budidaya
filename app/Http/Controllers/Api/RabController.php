@@ -30,6 +30,8 @@ class RabController extends Controller
             'total_rab' => round($rab->sum('total'), 2),
             'kalkulasi' => $proposal->hitungKalkulasi(),
             'status_rab' => $proposal->status_rab,
+            'nilai_rab' => $proposal->nilai_rab,
+            'catatan_rab_mentor' => $proposal->catatan_rab_mentor,
         ]);
     }
 
