@@ -307,34 +307,62 @@ class AktivitasController extends Controller
         ]);
     }
 
-    public function verifikasi(Request $request, $id)
-    {
-        $request->validate([
-            'status_verifikasi' => 'required|in:disetujui,revisi',
-            'catatan_mentor'    => 'nullable|string',
-            'nilai'             => 'nullable|numeric|min:0|max:100',
-        ]);
+        public function verifikasi(Request $request, $id)
+        {
+            $request->validate([
+                'status_verifikasi' => 'required|in:disetujui,revisi',
+                'catatan_mentor'    => 'nullable|string',
+                'nilai'             => 'nullable|numeric|min:0|max:100',
+            ]);
 
-        $aktivitas = Aktivitas::with(['kalender.komoditas', 'kalender.lahan'])->findOrFail($id);
+            // ✅ CARI AKTIVITAS DENGAN RELASI KALENDER & PENGGUNA
+            $aktivitas = Aktivitas::with([
+                'kalender',
+                'kalender.pengguna', // ✅ PASTIKAN RELASI INI ADA DI MODEL KALENDER
+                'kalender.komoditas',
+                'kalender.lahan'
+            ])->findOrFail($id);
 
-        if ($response = $this->authorizeVerifikasiAktivitas($request, $aktivitas)) {
-            return $response;
+            // ✅ CEK APAKAH MENTOR BERHAK MEMVERIFIKASI
+            $user = $request->user();
+            $siswaId = $aktivitas->kalender?->id_pengguna;
+
+            // Cari kelompok siswa
+            $kelompok = null;
+            if ($siswaId) {
+                $kelompok = Kelompok::whereHas('anggota', function ($query) use ($siswaId) {
+                    $query->where('user_id', $siswaId);
+                })->first();
+            }
+
+            // Cek apakah mentor adalah pembimbing kelompok siswa
+            if (!$kelompok || (int) $kelompok->id_mentor !== (int) $user->id) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Anda bukan mentor pembimbing kelompok siswa ini.',
+                    'debug' => [
+                        'siswa_id' => $siswaId,
+                        'kelompok_id' => $kelompok?->id,
+                        'id_mentor_kelompok' => $kelompok?->id_mentor,
+                        'user_id_mentor' => $user->id,
+                    ]
+                ], 403);
+            }
+
+            // ✅ UPDATE AKTIVITAS
+            $aktivitas->update([
+                'status_verifikasi' => $request->status_verifikasi,
+                'catatan_mentor'    => $request->catatan_mentor,
+                'nilai'             => $request->filled('nilai') ? $request->nilai : $aktivitas->nilai,
+                'verified_by'       => $user->id,
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Aktivitas berhasil diverifikasi',
+                'data' => $aktivitas,
+            ]);
         }
-
-        $aktivitas->update([
-            'status_verifikasi' => $request->status_verifikasi,
-            'catatan_mentor'    => $request->catatan_mentor,
-            'nilai'             => $request->filled('nilai') ? $request->nilai : $aktivitas->nilai,
-            'verified_by'       => $request->user()->id,
-        ]);
-
-        return response()->json([
-            'status'  => 'success',
-            'message' => 'Aktivitas berhasil diverifikasi',
-            'data'    => $this->formatAktivitas($aktivitas),
-        ]);
-    }
-
     /**
      * Pastikan mentor yang login adalah mentor pembimbing kelompok
      * tempat siswa pemilik aktivitas ini bernaung. Selain itu, ditolak (403).
