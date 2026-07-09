@@ -16,12 +16,22 @@ class Rab extends Model
         'volume',
         'harga',
         'total',
+        'laba',
+        'bep_unit',
+        'bep_harga',
+        'b_c_ratio',
+        'r_c_ratio',
     ];
 
     protected $casts = [
-        'volume' => 'float',
-        'harga'  => 'float',
-        'total'  => 'float',
+        'volume'    => 'float',
+        'harga'     => 'float',
+        'total'     => 'float',
+        'laba'      => 'float',
+        'bep_unit'  => 'float',
+        'bep_harga' => 'float',
+        'b_c_ratio' => 'float',
+        'r_c_ratio' => 'float',
     ];
 
     public function proposal()
@@ -30,7 +40,7 @@ class Rab extends Model
     }
 
     /**
-     * Total per item dihitung otomatis: volume × harga.
+     * Hitung total biaya per item.
      */
     public static function hitungTotal(float $volume, float $harga): float
     {

@@ -17,11 +17,13 @@ class Aktivitas extends Model
         'dokumentasi',
         'status_verifikasi',
         'catatan_mentor',
+        'nilai',
         'verified_by',
     ];
 
     protected $casts = [
         'tanggal_aktivitas' => 'date',
+        'nilai'             => 'float',
     ];
 
     /**
